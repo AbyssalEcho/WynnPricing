@@ -6,18 +6,18 @@ import com.wynntils.core.components.Models;
 import com.wynntils.models.emeralds.type.EmeraldUnits;
 import com.wynntils.models.gear.type.GearInfo;
 import com.wynntils.models.gear.type.GearRestrictions;
+import com.wynntils.models.ingredients.type.IngredientInfo;
 import com.wynntils.models.items.WynnItem;
 import com.wynntils.models.items.items.game.GearBoxItem;
 import com.wynntils.models.items.items.game.GearItem;
+import com.wynntils.models.items.items.game.IngredientItem;
 import com.wynntils.utils.mc.McUtils;
-import com.wynnventory.WynnventoryMod;
 import com.wynnventory.api.WynnventoryAPI;
 import com.wynnventory.config.ConfigManager;
 import com.wynnventory.model.item.TradeMarketItemPriceHolder;
 import com.wynnventory.model.item.TradeMarketItemPriceInfo;
 import com.wynnventory.util.EmeraldPrice;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -79,10 +79,19 @@ public abstract class TooltipMixin {
 
                 fetchPricesForGear(gearItem.getItemInfo());
 
-                tooltips.addAll(getTooltipsForGear(gearItem.getItemInfo()));
+                tooltips.addAll(getTooltipsForItem(gearItem.getItemInfo()));
 
                 // remove price if expired
                 if (fetchedPrices.get(gearItem.getName()).isPriceExpired(EXPIRE_MINS)) fetchedPrices.remove(gearItem.getName());
+            } else if(wynnItem instanceof IngredientItem ingItem) {
+                tooltips.add(Component.literal(TITLE_TEXT).withStyle(ChatFormatting.GOLD));
+
+                fetchPricesForIngredient(ingItem.getIngredientInfo());
+
+                tooltips.addAll(getTooltipsForItem(ingItem.getIngredientInfo()));
+
+                // remove price if expired
+                if (fetchedPrices.get(ingItem.getName()).isPriceExpired(EXPIRE_MINS)) fetchedPrices.remove(ingItem.getName());
             } else if(wynnItem instanceof GearBoxItem gearBoxItem && config.isShowBoxedItemTooltips()) {
                 tooltips.add(Component.literal(TITLE_TEXT).withStyle(ChatFormatting.GOLD));
 
@@ -90,7 +99,7 @@ public abstract class TooltipMixin {
                 for(GearInfo gear : possibleGear) {
                     fetchPricesForGear(gear);
 
-                    tooltips.addAll(getTooltipsForGear(gear));
+                    tooltips.addAll(getTooltipsForItem(gear));
                     tooltips.add(Component.literal(""));
 
                     // remove price if expired
@@ -200,70 +209,131 @@ public abstract class TooltipMixin {
     }
 
     @Unique
-    private List<Component> createPriceTooltip(GearInfo info, TradeMarketItemPriceInfo priceInfo) {
+    private List<Component> createPriceTooltip(Object info, TradeMarketItemPriceInfo priceInfo) {
         final ConfigManager config = ConfigManager.getInstance();
         final List<Component> tooltipLines = new ArrayList<>();
+        if (info instanceof GearInfo gearInfo) {
+            tooltipLines.add(formatText(gearInfo.name(), gearInfo.tier().getChatFormatting()));
+            if (priceInfo == null) {
+                tooltipLines.add(formatText("No price data available yet!", ChatFormatting.RED));
+            } else {
+                if (config.isShowMaxPrice() && priceInfo.getHighestPrice() > 0) {
+                    tooltipLines.add(formatPrice("Max: ", priceInfo.getHighestPrice()));
+                }
+                if (config.isShowMinPrice() && priceInfo.getLowestPrice() > 0) {
+                    tooltipLines.add(formatPrice("Min: ", priceInfo.getLowestPrice()));
+                }
+                if (config.isShowAveragePrice() && priceInfo.getAveragePrice() != null) {
+                    tooltipLines.add(formatPrice("Avg: ", priceInfo.getAveragePrice().intValue()));
+                }
 
-        tooltipLines.add(formatText(info.name(), info.tier().getChatFormatting()));
+                if (config.isShowAverage80Price() && priceInfo.getAverage80Price() != null) {
+                    tooltipLines.add(formatPrice("Avg 80%: ", priceInfo.getAverage80Price().intValue()));
+                }
 
-        if (priceInfo == null) {
-            tooltipLines.add(formatText("No price data available yet!", ChatFormatting.RED));
-        } else {
-            if (config.isShowMaxPrice() && priceInfo.getHighestPrice() > 0) {
-                tooltipLines.add(formatPrice("Max: ", priceInfo.getHighestPrice()));
-            }
-            if (config.isShowMinPrice() && priceInfo.getLowestPrice() > 0) {
-                tooltipLines.add(formatPrice("Min: ", priceInfo.getLowestPrice()));
-            }
-            if (config.isShowAveragePrice() && priceInfo.getAveragePrice() != null) {
-                tooltipLines.add(formatPrice("Avg: ", priceInfo.getAveragePrice().intValue()));
-            }
+                if (config.isShowUnidAveragePrice() && priceInfo.getUnidentifiedAveragePrice() != null) {
+                    tooltipLines.add(formatPrice("Unidentified Avg: ", priceInfo.getUnidentifiedAveragePrice().intValue()));
+                }
 
-            if (config.isShowAverage80Price() && priceInfo.getAverage80Price() != null) {
-                tooltipLines.add(formatPrice("Avg 80%: ", priceInfo.getAverage80Price().intValue()));
+                if (config.isShowUnidAverage80Price() && priceInfo.getUnidentifiedAverage80Price() != null) {
+                    tooltipLines.add(formatPrice("Unidentified Avg 80%: ", priceInfo.getUnidentifiedAverage80Price().intValue()));
+                }
             }
+        } else if (info instanceof IngredientInfo ingInfo) {
+            tooltipLines.add(formatText(ingInfo.name(), ChatFormatting.WHITE));
+            if (priceInfo == null) {
+                tooltipLines.add(formatText("No price data available yet!", ChatFormatting.RED));
+            } else {
+                if (config.isShowMaxPrice() && priceInfo.getHighestPrice() > 0) {
+                    tooltipLines.add(formatPrice("Max: ", priceInfo.getHighestPrice()));
+                }
+                if (config.isShowMinPrice() && priceInfo.getLowestPrice() > 0) {
+                    tooltipLines.add(formatPrice("Min: ", priceInfo.getLowestPrice()));
+                }
+                if (config.isShowAveragePrice() && priceInfo.getAveragePrice() != null) {
+                    tooltipLines.add(formatPrice("Avg: ", priceInfo.getAveragePrice().intValue()));
+                }
 
-            if (config.isShowUnidAveragePrice() && priceInfo.getUnidentifiedAveragePrice() != null) {
-                tooltipLines.add(formatPrice("Unidentified Avg: ", priceInfo.getUnidentifiedAveragePrice().intValue()));
-            }
-
-            if (config.isShowUnidAverage80Price() && priceInfo.getUnidentifiedAverage80Price() != null) {
-                tooltipLines.add(formatPrice("Unidentified Avg 80%: ", priceInfo.getUnidentifiedAverage80Price().intValue()));
+                if (config.isShowAverage80Price() && priceInfo.getAverage80Price() != null) {
+                    tooltipLines.add(formatPrice("Avg 80%: ", priceInfo.getAverage80Price().intValue()));
+                }
             }
         }
         return tooltipLines;
     }
 
     private void fetchPricesForGear(GearInfo info) {
-        if (!fetchedPrices.containsKey(info.name())) {
-            TradeMarketItemPriceHolder requestedPrice = new TradeMarketItemPriceHolder(FETCHING, info);
-            fetchedPrices.put(info.name(), requestedPrice);
+        fetchPrices(info, info.metaInfo().restrictions());
+    }
 
-            if (info.metaInfo().restrictions() == GearRestrictions.UNTRADABLE) {
-                // ignore untradable
-                requestedPrice.setPriceInfo(UNTRADABLE);
-            } else {
-                // fetch price async
-                CompletableFuture.supplyAsync(() -> API.fetchItemPrices(info.name()), executorService)
+    private void fetchPricesForIngredient(IngredientInfo info) {
+        fetchPrices(info, null);
+    }
+
+
+    private void fetchPrices(Object iInfo, GearRestrictions restrictions) {
+        String itemName;
+        if (iInfo instanceof GearInfo gearInfo) {
+            itemName = gearInfo.name();
+            if (!fetchedPrices.containsKey(itemName)) {
+                TradeMarketItemPriceHolder requestedPrice = new TradeMarketItemPriceHolder(FETCHING, gearInfo);
+                fetchedPrices.put(itemName, requestedPrice);
+
+                if (restrictions == GearRestrictions.UNTRADABLE) {
+                    // Ignore untradable gear
+                    requestedPrice.setPriceInfo(UNTRADABLE);
+                } else {
+                    // Fetch price asynchronously
+                    CompletableFuture.supplyAsync(() -> API.fetchItemPrices(itemName), executorService)
+                            .thenAccept(requestedPrice::setPriceInfo);
+                }
+            }
+        } else if (iInfo instanceof IngredientInfo ingInfo) {
+            itemName = ingInfo.name();
+            if (!fetchedPrices.containsKey(itemName)) {
+                TradeMarketItemPriceHolder requestedPrice = new TradeMarketItemPriceHolder(FETCHING, ingInfo);
+                fetchedPrices.put(itemName, requestedPrice);
+                // Fetch price asynchronously
+                CompletableFuture.supplyAsync(() -> API.fetchItemPrices(itemName), executorService)
                         .thenAccept(requestedPrice::setPriceInfo);
             }
+        } else {
+            itemName = "";
         }
     }
 
-    private List<Component> getTooltipsForGear(GearInfo info) {
-        TradeMarketItemPriceInfo price = fetchedPrices.get(info.name()).getPriceInfo();
+    private List<Component> getTooltipsForItem(Object info) {
         List<Component> tooltips = new ArrayList<>();
+        String itemName;
+        TradeMarketItemPriceInfo price;
 
-        if (price == FETCHING) { // Display retrieving info
-            tooltips.add(formatText("Retrieving price information...", ChatFormatting.WHITE));
-        } else if (price == UNTRADABLE) { // Display untradable
-            tooltips.add(formatText("Item is untradable.", ChatFormatting.RED));
-        } else { // Display fetched price
-            tooltips = createPriceTooltip(info, price);
+        // Check if the item is GearInfo or IngredientInfo
+        if (info instanceof GearInfo) {
+            itemName = ((GearInfo) info).name();
+            price = fetchedPrices.get(itemName).getPriceInfo();
+
+            if (price == FETCHING) { // Display retrieving info
+                tooltips.add(formatText("Retrieving price information...", ChatFormatting.WHITE));
+            } else if (price == UNTRADABLE) { // Display untradable
+                tooltips.add(formatText("Item is untradable.", ChatFormatting.RED));
+            } else { // Display fetched price
+                tooltips = createPriceTooltip(info, price);
+            }
+
+        } else if (info instanceof IngredientInfo) {
+            itemName = ((IngredientInfo) info).name();
+            price = fetchedPrices.get(itemName).getPriceInfo();
+
+            if (price == FETCHING) { // Display retrieving info
+                tooltips.add(formatText("Retrieving price information...", ChatFormatting.WHITE));
+            } else { // Display fetched price (no untradable check for ingredients)
+                tooltips = createPriceTooltip(info, price);
+            }
         }
 
         return tooltips;
     }
+
 
     @Unique
     private static MutableComponent formatPrice(String label, int price) {
