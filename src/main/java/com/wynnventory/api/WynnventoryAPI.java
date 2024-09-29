@@ -42,13 +42,7 @@ public class WynnventoryAPI {
             final String encodedItemName = URLEncoder.encode(itemName, StandardCharsets.UTF_8).replace("+", "%20");
 
             URI endpointURI;
-            if (WynnventoryMod.isDev()) {
-                WynnventoryMod.info("Fetching market data from DEV endpoint.");
-                endpointURI = getEndpointURI("trademarket/item/" + encodedItemName + "/price");
-            } else {
-                endpointURI = getEndpointURI("trademarket/item/" + encodedItemName + "/price");
-            }
-
+			endpointURI = getEndpointURI("trademarket/item/" + encodedItemName + "/price");
             HttpResponse<String> response = HttpUtil.sendHttpGetRequest(endpointURI);
 
             if (response.statusCode() == 200) {
