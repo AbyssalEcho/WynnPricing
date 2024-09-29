@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class WynnventoryAPI {
-    private static final String BASE_URL = "API_URL_BASE";
+    private static final String BASE_URL = "https://api.wynnpricing.xyz";
     private static final URI API_BASE_URL = createApiBaseUrl();
     private static final ObjectMapper objectMapper = createObjectMapper();
 

@@ -4,7 +4,6 @@ import com.wynntils.utils.mc.McUtils;
 import com.wynnventory.accessor.ItemQueueAccessor;
 import com.wynnventory.model.item.LootpoolItem;
 import com.wynnventory.model.item.TradeMarketItem;
-import com.wynnventory.util.ModUpdater;
 import com.wynnventory.util.RegionDetector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -44,15 +43,6 @@ public abstract class ClientPacketListenerMixin extends ClientCommonPacketListen
         super(minecraft, connection, commonListenerCookie);
     }
 
-    @Inject(method = "handleLogin", at = @At("RETURN"))
-    private void onPlayerJoin(ClientboundLoginPacket packet, CallbackInfo ci) {
-        if(IS_FIRST_WORLD_JOIN) {
-           IS_FIRST_WORLD_JOIN = false;
-        } else {
-            ModUpdater.checkForUpdates();
-        }
-    }
-
     @Inject(method = "handleContainerSetSlot", at = @At("RETURN"))
     private void handleContainerSetSlot(ClientboundContainerSetSlotPacket packet, CallbackInfo ci) {
         Screen currentScreen = Minecraft.getInstance().screen;
@@ -66,25 +56,6 @@ public abstract class ClientPacketListenerMixin extends ClientCommonPacketListen
 
             if(marketItem != null) {
                 marketItemsBuffer.add(marketItem);
-            }
-        }
-    }
-
-    @Inject(method = "handleContainerContent", at = @At("RETURN"))
-    private void handleContainerContent(ClientboundContainerSetContentPacket packet, CallbackInfo ci) {
-        Screen currentScreen = Minecraft.getInstance().screen;
-        if (currentScreen == null || packet.getContainerId() <= 0) return;
-
-        if (currentScreen instanceof AbstractContainerScreen<?> containerScreen) {
-            String title = containerScreen.getTitle().getString();
-            if (title.equals(LOOTPOOL_TITLE)) {
-                // @TODO: TEST ONLY
-                // McUtils.sendMessageToClient(Component.literal("LOOTPOOL DETECTED. Region is " + RegionDetector.getRegion(McUtils.player().getBlockX(), McUtils.player().getBlockZ())));
-                for (ItemStack item : packet.getItems()) {
-                    if (item.getItem() != Items.AIR && item.getItem() != Items.COMPASS && item.getItem() != Items.POTION && !McUtils.player().getInventory().items.contains(item)) {
-                            LootpoolItem.createLootpoolItem(item).ifPresent(lootpoolItemsBuffer::add);
-                    }
-                }
             }
         }
     }

@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 public class ModUpdater {
-    private static final String LATEST_RELEASE_URL = "https://api.github.com/repos/Aruloci/Wynnventory/releases/latest";
+    private static final String LATEST_RELEASE_URL = "https://api.github.com/repos/AbyssalEcho/WynnPricing/releases/latest";
     private static boolean alreadyChecked = false;
 
     private ModUpdater() { }
@@ -33,7 +33,7 @@ public class ModUpdater {
         alreadyChecked = true;
 
         if (WynnventoryMod.WYNNVENTORY_INSTANCE.isEmpty()) {
-            WynnventoryMod.error("Could not find Wynnventory in Fabric Loader!");
+            WynnventoryMod.error("Could not find WynnPricing in Fabric Loader!");
             return;
         }
 
