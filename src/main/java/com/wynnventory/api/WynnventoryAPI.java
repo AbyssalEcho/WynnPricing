@@ -25,25 +25,15 @@ public class WynnventoryAPI {
         if (marketItems.isEmpty()) return;
 
         URI endpointURI;
-        if (WynnventoryMod.isDev()) {
-            WynnventoryMod.info("Sending market data to DEV endpoint.");
-            endpointURI = getEndpointURI("trademarket/items/");
-        } else {
-            endpointURI = getEndpointURI("trademarket/items/");
-        }
+        endpointURI = getEndpointURI("trademarket/items/");
         HttpUtil.sendHttpPostRequest(endpointURI, serializeItemData(marketItems));
     }
 
     public void sendLootpoolData(List<LootpoolItem> lootpoolItems) {
         if (lootpoolItems.isEmpty()) return;
 
-        URI endpointURI;
-        if (WynnventoryMod.isDev()) {
-            WynnventoryMod.info("Sending lootpool data to DEV endpoint.");
-            endpointURI = URI.create("lootpull/items/");
-        } else {
-            endpointURI = getEndpointURI("lootpool/items");
-        }
+        URI endpointURI; // arguably dont need this function anymore, since lootpools are out of scope
+        endpointURI = getEndpointURI("lootpool/items");
         HttpUtil.sendHttpPostRequest(endpointURI, serializeItemData(lootpoolItems));
     }
 
