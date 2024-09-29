@@ -54,7 +54,7 @@ public class WynnventoryAPI {
             URI endpointURI;
             if (WynnventoryMod.isDev()) {
                 WynnventoryMod.info("Fetching market data from DEV endpoint.");
-                endpointURI = getEndpointURI("trademarket/items/" + encodedItemName + "/price");
+                endpointURI = getEndpointURI("trademarket/item/" + encodedItemName + "/price");
             } else {
                 endpointURI = getEndpointURI("trademarket/item/" + encodedItemName + "/price");
             }
